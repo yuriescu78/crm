@@ -38,3 +38,7 @@ key
 key.pub
 .env.local
 .vercel
+key
+key.pub
+.env.local
+.vercel
