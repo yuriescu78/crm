@@ -29,8 +29,9 @@ export default function Modal({ open, onClose, title, subtitle, width = 520, chi
       style={{
         position: 'fixed', inset: 0, zIndex: 1000,
         background: 'oklch(0 0 0 / 0.40)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        padding: 16, animation: 'modalFadeIn 0.16s ease forwards',
+        display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
+        overflowY: 'auto', padding: '40px 16px',
+        animation: 'modalFadeIn 0.16s ease forwards',
         backdropFilter: 'blur(2px)',
       }}
     >
@@ -38,8 +39,9 @@ export default function Modal({ open, onClose, title, subtitle, width = 520, chi
         onClick={e => e.stopPropagation()}
         style={{
           background: 'white', borderRadius: 16,
-          width, maxWidth: 'calc(100vw - 32px)', maxHeight: 'calc(100vh - 64px)',
+          width, maxWidth: 'calc(100vw - 32px)',
           display: 'flex', flexDirection: 'column',
+          alignSelf: 'flex-start',
           boxShadow: '0 8px 32px oklch(0 0 0/0.12), 0 40px 80px oklch(0 0 0/0.10)',
           animation: 'modalSlideIn 0.2s cubic-bezier(0.34,1.56,0.64,1) forwards',
           border: `1px solid ${COLORS.border}`,
