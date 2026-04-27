@@ -6,8 +6,10 @@
 
 body {
   font-family: var(--font-jakarta), 'Plus Jakarta Sans', sans-serif;
-  background: oklch(0.965 0.008 240);
+  background: oklch(0.975 0.005 258);
   min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 input, select, button, textarea {

@@ -4,10 +4,16 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { COLORS } from '@/lib/colors'
+import { Menu, Search, Bell, LogOut, Settings, User, ChevronDown } from 'lucide-react'
 
-const VIEW_LABELS: Record<string, string> = {
-  dashboard: 'Dashboard', clientes: 'Clientes', pipeline: 'Pipeline',
-  calendario: 'Calendario', trabajos: 'Trabajos', telegram: 'Telegram Chat', ajustes: 'Ajustes',
+const VIEW_LABELS: Record<string, { label: string; desc: string }> = {
+  dashboard:  { label: 'Dashboard',   desc: 'Resumen general' },
+  clientes:   { label: 'Clientes',    desc: 'Gestión de leads y clientes' },
+  pipeline:   { label: 'Pipeline',    desc: 'Oportunidades de venta' },
+  calendario: { label: 'Calendario',  desc: 'Eventos y reuniones' },
+  trabajos:   { label: 'Tareas',      desc: 'Gestión de tareas' },
+  telegram:   { label: 'Telegram',    desc: 'Agente conversacional' },
+  ajustes:    { label: 'Ajustes',     desc: 'Configuración del sistema' },
 }
 
 interface TopBarProps {
@@ -20,7 +26,9 @@ interface TopBarProps {
 
 export default function TopBar({ view, onToggle, userName = '', userEmail = '', userInitials = '?' }: TopBarProps) {
   const [showMenu, setShowMenu] = useState(false)
+  const [searchFocus, setSearchFocus] = useState(false)
   const router = useRouter()
+  const meta = VIEW_LABELS[view] ?? { label: view, desc: '' }
 
   const handleLogout = async () => {
     const sb = createClient()
@@ -30,89 +38,170 @@ export default function TopBar({ view, onToggle, userName = '', userEmail = '', 
 
   return (
     <div style={{
-      height: 56, background: 'white', borderBottom: '1px solid oklch(0.93 0.01 270)',
-      display: 'flex', alignItems: 'center', padding: '0 24px', gap: 14,
-      boxShadow: '0 1px 0 oklch(0.93 0.01 270)', flexShrink: 0,
+      height: 60, background: 'white',
+      borderBottom: `1px solid ${COLORS.border}`,
+      display: 'flex', alignItems: 'center',
+      padding: '0 20px 0 24px', gap: 16, flexShrink: 0,
     }}>
+      {/* Toggle */}
       <button onClick={onToggle} style={{
-        width: 32, height: 32, border: 'none', background: 'oklch(0.95 0.01 270)',
-        borderRadius: 8, cursor: 'pointer', display: 'flex', alignItems: 'center',
-        justifyContent: 'center', color: 'oklch(0.40 0.04 270)', flexShrink: 0,
-      }}>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-          <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
-        </svg>
+        width: 34, height: 34, border: 'none',
+        background: 'transparent', borderRadius: 8, cursor: 'pointer',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        color: COLORS.textMuted, flexShrink: 0, transition: 'background 0.12s',
+      }}
+        onMouseEnter={e => (e.currentTarget.style.background = COLORS.n100)}
+        onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+      >
+        <Menu size={18} strokeWidth={1.8} />
       </button>
 
-      <span style={{ fontSize: 15, fontWeight: 700, color: 'oklch(0.18 0.03 270)' }}>
-        {VIEW_LABELS[view] || view}
-      </span>
+      {/* Page title */}
+      <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+        <div style={{ fontSize: 15, fontWeight: 700, color: COLORS.text, lineHeight: 1, letterSpacing: '-0.02em' }}>
+          {meta.label}
+        </div>
+        {meta.desc && (
+          <div style={{ fontSize: 11, color: COLORS.textMuted, marginTop: 2, fontWeight: 400 }}>
+            {meta.desc}
+          </div>
+        )}
+      </div>
 
-      <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
+      <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
         {/* Search */}
-        <div style={{ position: 'relative' }}>
-          <svg style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'oklch(0.65 0.04 270)' }} width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-          </svg>
-          <input placeholder="Buscar..." style={{
-            padding: '7px 12px 7px 30px', borderRadius: 8,
-            border: '1px solid oklch(0.90 0.02 270)', fontSize: 12,
-            outline: 'none', background: 'oklch(0.97 0.01 270)',
-            width: 180, color: 'oklch(0.30 0.03 270)', fontFamily: 'inherit',
-          }}/>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 8,
+          padding: '7px 12px',
+          border: `1.5px solid ${searchFocus ? COLORS.primary200 : COLORS.border}`,
+          borderRadius: 10, background: searchFocus ? 'white' : COLORS.n50,
+          transition: 'all 0.15s', width: searchFocus ? 220 : 180,
+        }}>
+          <Search size={13} color={COLORS.textMuted} strokeWidth={2} />
+          <input
+            placeholder="Buscar..."
+            onFocus={() => setSearchFocus(true)}
+            onBlur={() => setSearchFocus(false)}
+            style={{
+              border: 'none', background: 'transparent', outline: 'none',
+              fontSize: 12, color: COLORS.text, fontFamily: 'inherit',
+              width: '100%',
+            }}
+          />
         </div>
 
-        {/* Notif */}
+        {/* Notifications */}
         <button style={{
-          width: 34, height: 34, border: '1px solid oklch(0.90 0.02 270)',
-          borderRadius: 8, background: 'white', cursor: 'pointer',
+          width: 36, height: 36,
+          border: `1.5px solid ${COLORS.border}`,
+          borderRadius: 10, background: 'white', cursor: 'pointer',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: 'oklch(0.45 0.04 270)', position: 'relative',
-        }}>
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-          </svg>
-          <div style={{ position: 'absolute', top: 6, right: 6, width: 7, height: 7, borderRadius: '50%', background: 'oklch(0.62 0.18 25)', border: '1.5px solid white' }}/>
+          color: COLORS.textSub, position: 'relative', transition: 'all 0.12s',
+        }}
+          onMouseEnter={e => { e.currentTarget.style.background = COLORS.n50; e.currentTarget.style.borderColor = COLORS.n300 }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'white'; e.currentTarget.style.borderColor = COLORS.border }}
+        >
+          <Bell size={15} strokeWidth={1.8} />
+          <div style={{
+            position: 'absolute', top: 7, right: 7,
+            width: 6, height: 6, borderRadius: '50%',
+            background: COLORS.red, border: '1.5px solid white',
+          }} />
         </button>
 
-        {/* Avatar + logout menu */}
+        {/* Divider */}
+        <div style={{ width: 1, height: 22, background: COLORS.border, margin: '0 4px' }} />
+
+        {/* User menu */}
         <div style={{ position: 'relative' }}>
-          <button onClick={() => setShowMenu(m => !m)} style={{
-            width: 34, height: 34, borderRadius: '50%', border: 'none', cursor: 'pointer',
-            background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.amber})`,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: 'white', fontWeight: 700, fontSize: 12,
-          }}>
-            {userInitials}
+          <button
+            onClick={() => setShowMenu(m => !m)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              padding: '5px 10px 5px 6px',
+              border: `1.5px solid ${showMenu ? COLORS.primary200 : COLORS.border}`,
+              borderRadius: 10, background: showMenu ? COLORS.primary50 : 'white',
+              cursor: 'pointer', transition: 'all 0.12s',
+            }}
+            onMouseEnter={e => { if (!showMenu) { e.currentTarget.style.background = COLORS.n50; e.currentTarget.style.borderColor = COLORS.n300 } }}
+            onMouseLeave={e => { if (!showMenu) { e.currentTarget.style.background = 'white'; e.currentTarget.style.borderColor = COLORS.border } }}
+          >
+            <div style={{
+              width: 26, height: 26, borderRadius: 7,
+              background: `linear-gradient(135deg, ${COLORS.primary} 0%, ${COLORS.violet} 100%)`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 10, fontWeight: 700, color: 'white', letterSpacing: '0.02em',
+            }}>
+              {userInitials}
+            </div>
+            <span style={{ fontSize: 12, fontWeight: 600, color: COLORS.text, maxWidth: 100, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {userName.split(' ')[0]}
+            </span>
+            <ChevronDown size={12} color={COLORS.textMuted} strokeWidth={2} style={{ transform: showMenu ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.15s' }} />
           </button>
+
           {showMenu && (
             <>
-              <div onClick={() => setShowMenu(false)} style={{ position: 'fixed', inset: 0, zIndex: 99 }}/>
+              <div onClick={() => setShowMenu(false)} style={{ position: 'fixed', inset: 0, zIndex: 99 }} />
               <div style={{
-                position: 'absolute', right: 0, top: 40, background: 'white',
-                borderRadius: 10, boxShadow: '0 4px 20px oklch(0 0 0/0.12)',
-                border: `1px solid ${COLORS.border}`, minWidth: 180, zIndex: 100, overflow: 'hidden',
+                position: 'absolute', right: 0, top: 46,
+                background: 'white', borderRadius: 12,
+                boxShadow: '0 8px 24px oklch(0 0 0/0.10), 0 2px 6px oklch(0 0 0/0.06)',
+                border: `1px solid ${COLORS.border}`,
+                minWidth: 200, zIndex: 100, overflow: 'hidden',
               }}>
-                <div style={{ padding: '12px 14px', borderBottom: `1px solid ${COLORS.border}` }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: COLORS.text }}>{userName}</div>
-                  <div style={{ fontSize: 11, color: COLORS.textMuted, marginTop: 2 }}>{userEmail}</div>
+                {/* Header */}
+                <div style={{ padding: '14px 16px', borderBottom: `1px solid ${COLORS.border}` }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{
+                      width: 36, height: 36, borderRadius: 9,
+                      background: `linear-gradient(135deg, ${COLORS.primary} 0%, ${COLORS.violet} 100%)`,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 13, fontWeight: 700, color: 'white',
+                    }}>
+                      {userInitials}
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: COLORS.text }}>{userName}</div>
+                      <div style={{ fontSize: 11, color: COLORS.textMuted, marginTop: 1 }}>{userEmail}</div>
+                    </div>
+                  </div>
                 </div>
-                <button onClick={handleLogout} style={{
-                  width: '100%', padding: '10px 14px', border: 'none', background: 'none',
-                  textAlign: 'left', cursor: 'pointer', fontSize: 13, color: COLORS.red,
-                  fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 8,
-                }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                    <polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
-                  </svg>
-                  Cerrar sesión
-                </button>
+
+                {/* Items */}
+                <div style={{ padding: '6px 8px' }}>
+                  <MenuItem icon={<User size={14} strokeWidth={1.8} />} label="Mi perfil" onClick={() => { router.push('/ajustes'); setShowMenu(false) }} />
+                  <MenuItem icon={<Settings size={14} strokeWidth={1.8} />} label="Ajustes" onClick={() => { router.push('/ajustes'); setShowMenu(false) }} />
+                </div>
+                <div style={{ borderTop: `1px solid ${COLORS.border}`, padding: '6px 8px' }}>
+                  <MenuItem icon={<LogOut size={14} strokeWidth={1.8} />} label="Cerrar sesión" onClick={handleLogout} danger />
+                </div>
               </div>
             </>
           )}
         </div>
       </div>
     </div>
+  )
+}
+
+function MenuItem({ icon, label, onClick, danger }: { icon: React.ReactNode; label: string; onClick: () => void; danger?: boolean }) {
+  const [hover, setHover] = useState(false)
+  return (
+    <button
+      onClick={onClick}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{
+        width: '100%', display: 'flex', alignItems: 'center', gap: 9,
+        padding: '8px 10px', border: 'none', borderRadius: 8, cursor: 'pointer',
+        background: hover ? (danger ? COLORS.red100 : COLORS.n50) : 'transparent',
+        color: danger ? COLORS.red : COLORS.textSub, fontSize: 13, fontWeight: 500,
+        fontFamily: 'inherit', textAlign: 'left', transition: 'all 0.12s',
+      }}
+    >
+      {icon}
+      {label}
+    </button>
   )
 }
