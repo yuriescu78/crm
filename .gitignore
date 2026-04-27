@@ -36,6 +36,8 @@ yarn-error.log*
 next-env.d.ts
 # SSH keys & local credentials
 *.pub
+key
+key.pub
 1234
 1234.pub
 
