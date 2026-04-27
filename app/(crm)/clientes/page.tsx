@@ -7,6 +7,7 @@ import { formatDate, formatDateTime, initials, avatarColor, isOverdue } from '@/
 import type { Client, Profile, Opportunity, Activity, Task, Document } from '@/lib/types'
 import Modal from '@/components/ui/Modal'
 import { Btn, FormField, FormRow, inputStyle, selectStyle, textareaStyle, Spinner } from '@/components/ui/Forms'
+import { Plus, Search, ChevronLeft, Mail, Phone, MapPin, Pencil, Phone as PhoneIcon, Mail as MailIcon, FileText, RefreshCw, Users, CheckSquare, Send, Paperclip } from 'lucide-react'
 
 /* ── Helpers ──────────────────────────────────────────────── */
 
@@ -126,7 +127,29 @@ function ClientForm({ client, profiles, onSave }: { client: Partial<Client> | nu
 
 /* ── Client Detail ───────────────────────────────────────── */
 
-const ACT_ICONS: Record<string, string> = { llamada: '📞', email: '📧', nota: '📝', cambio: '🔄', reunion: '👥', tarea: '✅', documento: '📎', telegram: '✈️' }
+const ACT_META: Record<string, { Icon: React.ElementType; color: string; bg: string }> = {
+  llamada:   { Icon: PhoneIcon,   color: COLORS.sky,      bg: COLORS.sky100 },
+  email:     { Icon: MailIcon,    color: COLORS.primary,  bg: COLORS.primary100 },
+  nota:      { Icon: FileText,    color: COLORS.amber,    bg: COLORS.amber100 },
+  cambio:    { Icon: RefreshCw,   color: COLORS.violet,   bg: COLORS.violet100 },
+  reunion:   { Icon: Users,       color: COLORS.teal,     bg: COLORS.teal100 },
+  tarea:     { Icon: CheckSquare, color: COLORS.green600, bg: COLORS.green100 },
+  documento: { Icon: Paperclip,   color: COLORS.amber,    bg: COLORS.amber100 },
+  telegram:  { Icon: Send,        color: COLORS.primary,  bg: COLORS.primary100 },
+}
+
+function InfoRow({ items }: { items: { label: string; value: string }[] }) {
+  return (
+    <div style={{ display: 'flex', borderTop: `1px solid ${COLORS.border}`, marginTop: 20 }}>
+      {items.map(({ label, value }, i) => (
+        <div key={label} style={{ flex: 1, padding: '14px 18px', borderRight: i < items.length - 1 ? `1px solid ${COLORS.border}` : 'none' }}>
+          <div style={{ fontSize: 11, color: COLORS.textMuted, fontWeight: 500, marginBottom: 4 }}>{label}</div>
+          <div style={{ fontSize: 13, fontWeight: 600, color: COLORS.text }}>{value}</div>
+        </div>
+      ))}
+    </div>
+  )
+}
 
 function ClientDetail({ client, profiles, onClose, onEdit }: { client: Client; profiles: Profile[]; onClose: () => void; onEdit: (c: Client) => void }) {
   const [tab, setTab] = useState('resumen')
@@ -146,58 +169,87 @@ function ClientDetail({ client, profiles, onClose, onEdit }: { client: Client; p
     ]).then(([o, a, t, d]) => { setOpps(o); setActs(a); setTasks(t); setDocs(d); setLoading(false) })
   }, [client.id])
 
-  const TABS = ['resumen', 'actividad', 'oportunidades', 'tareas', 'documentos']
+  const TABS = [
+    { id: 'resumen', label: 'Resumen' },
+    { id: 'actividad', label: 'Actividad' },
+    { id: 'oportunidades', label: `Oportunidades${opps.length ? ` (${opps.length})` : ''}` },
+    { id: 'tareas', label: `Tareas${tasks.length ? ` (${tasks.length})` : ''}` },
+    { id: 'documentos', label: 'Documentos' },
+  ]
 
   return (
     <div>
-      <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: COLORS.textSub, display: 'flex', alignItems: 'center', gap: 6, padding: '0 0 16px 0', fontFamily: 'inherit', fontWeight: 500 }}>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>
+      {/* Back */}
+      <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: COLORS.textSub, display: 'flex', alignItems: 'center', gap: 5, padding: '0 0 16px 0', fontFamily: 'inherit', fontWeight: 500, transition: 'color 0.12s' }}
+        onMouseEnter={e => (e.currentTarget.style.color = COLORS.text)}
+        onMouseLeave={e => (e.currentTarget.style.color = COLORS.textSub)}>
+        <ChevronLeft size={15} strokeWidth={2} />
         Volver a clientes
       </button>
 
-      <div style={{ background: 'white', borderRadius: 14, padding: '22px 24px', marginBottom: 18, boxShadow: '0 1px 3px oklch(0 0 0/0.06), 0 4px 16px oklch(0 0 0/0.05)' }}>
-        <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
-          <Avatar name={`${client.firstName} ${client.lastName}`} index={client.id.charCodeAt(1)} size={56}/>
-          <div style={{ flex: 1 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-              <span style={{ fontSize: 20, fontWeight: 800, color: COLORS.text, letterSpacing: '-0.02em' }}>{client.firstName} {client.lastName}</span>
-              <StatusBadge status={client.status}/>
-              <PriorityDot priority={client.priority}/>
+      {/* Header card */}
+      <div style={{ background: 'white', borderRadius: 14, marginBottom: 16, border: `1px solid ${COLORS.border}`, boxShadow: '0 1px 2px oklch(0 0 0/0.04), 0 4px 12px oklch(0 0 0/0.04)', overflow: 'hidden' }}>
+        <div style={{ padding: '22px 24px' }}>
+          <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+            <Avatar name={`${client.firstName} ${client.lastName}`} index={client.id.charCodeAt(1)} size={54} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 4 }}>
+                <span style={{ fontSize: 20, fontWeight: 800, color: COLORS.text, letterSpacing: '-0.03em' }}>
+                  {client.firstName} {client.lastName}
+                </span>
+                <StatusBadge status={client.status} />
+                <PriorityDot priority={client.priority} />
+              </div>
+              {(client.position || client.company) && (
+                <div style={{ fontSize: 13, color: COLORS.textSub, marginBottom: 12 }}>
+                  {client.position}{client.company && ` · ${client.company}`}
+                </div>
+              )}
+              <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
+                {client.email && (
+                  <a href={`mailto:${client.email}`} style={{ fontSize: 12, color: COLORS.textSub, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 5, transition: 'color 0.12s' }}
+                    onMouseEnter={e => (e.currentTarget.style.color = COLORS.primary)}
+                    onMouseLeave={e => (e.currentTarget.style.color = COLORS.textSub)}>
+                    <Mail size={13} strokeWidth={1.8} />{client.email}
+                  </a>
+                )}
+                {client.phone && (
+                  <span style={{ fontSize: 12, color: COLORS.textSub, display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <Phone size={13} strokeWidth={1.8} />{client.phone}
+                  </span>
+                )}
+                {client.city && (
+                  <span style={{ fontSize: 12, color: COLORS.textSub, display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <MapPin size={13} strokeWidth={1.8} />{client.city}
+                  </span>
+                )}
+              </div>
+              {client.tags && client.tags.length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 10 }}>
+                  {client.tags.map(t => (
+                    <span key={t} style={{ fontSize: 11, padding: '2px 9px', borderRadius: 20, background: COLORS.primary100, color: COLORS.primary, fontWeight: 600 }}>{t}</span>
+                  ))}
+                </div>
+              )}
             </div>
-            <div style={{ fontSize: 13, color: COLORS.textSub, marginTop: 3 }}>{client.position}{client.company && ` · ${client.company}`}</div>
-            <div style={{ display: 'flex', gap: 16, marginTop: 10, flexWrap: 'wrap' }}>
-              {client.email && <a href={`mailto:${client.email}`} style={{ fontSize: 12, color: COLORS.primary, textDecoration: 'none' }}>📧 {client.email}</a>}
-              {client.phone && <span style={{ fontSize: 12, color: COLORS.textSub }}>📞 {client.phone}</span>}
-              {client.city && <span style={{ fontSize: 12, color: COLORS.textSub }}>📍 {client.city}</span>}
-            </div>
+            <Btn variant="secondary" size="sm" onClick={() => onEdit(client)}>
+              <Pencil size={12} strokeWidth={2} /> Editar
+            </Btn>
           </div>
-          <Btn variant="secondary" size="sm" onClick={() => onEdit(client)}>Editar</Btn>
         </div>
-        <div style={{ display: 'flex', gap: 8, marginTop: 16, flexWrap: 'wrap' }}>
-          {[
-            { label: 'Sector', value: client.sector || '—' },
-            { label: 'Origen', value: client.source || '—' },
-            { label: 'Responsable', value: owner?.name || owner?.email || '—' },
-            { label: 'Prioridad', value: client.priority },
-            { label: 'Última actividad', value: formatDate(client.lastActivityAt) },
-          ].map(({ label, value }) => (
-            <div key={label} style={{ padding: '6px 12px', borderRadius: 8, background: COLORS.n50, border: `1px solid ${COLORS.border}` }}>
-              <div style={{ fontSize: 10, fontWeight: 600, color: COLORS.textMuted, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 2 }}>{label}</div>
-              <div style={{ fontSize: 12, fontWeight: 600, color: COLORS.text }}>{value}</div>
-            </div>
-          ))}
-        </div>
-        {client.tags && client.tags.length > 0 && (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 12 }}>
-            {client.tags.map(t => <span key={t} style={{ fontSize: 11, padding: '3px 8px', borderRadius: 20, background: COLORS.primary100, color: COLORS.primary, fontWeight: 600 }}>{t}</span>)}
-          </div>
-        )}
+        <InfoRow items={[
+          { label: 'Sector',           value: client.sector || '—' },
+          { label: 'Origen',           value: client.source || '—' },
+          { label: 'Responsable',      value: owner?.name || owner?.email || '—' },
+          { label: 'Prioridad',        value: client.priority.charAt(0).toUpperCase() + client.priority.slice(1) },
+          { label: 'Última actividad', value: formatDate(client.lastActivityAt) },
+        ]} />
       </div>
 
-      <div style={{ background: 'white', borderRadius: 14, boxShadow: '0 1px 3px oklch(0 0 0/0.06), 0 4px 16px oklch(0 0 0/0.05)', overflow: 'hidden' }}>
+      <div style={{ background: 'white', borderRadius: 14, border: `1px solid ${COLORS.border}`, boxShadow: '0 1px 2px oklch(0 0 0/0.04), 0 4px 12px oklch(0 0 0/0.04)', overflow: 'hidden' }}>
         <div style={{ display: 'flex', borderBottom: `1px solid ${COLORS.border}`, padding: '0 20px' }}>
           {TABS.map(t => (
-            <button key={t} onClick={() => setTab(t)} style={{ padding: '14px 16px', border: 'none', background: 'none', cursor: 'pointer', fontSize: 13, fontWeight: tab === t ? 700 : 500, fontFamily: 'inherit', color: tab === t ? COLORS.primary : COLORS.textSub, borderBottom: tab === t ? `2px solid ${COLORS.primary}` : '2px solid transparent', marginBottom: -1, transition: 'all 0.12s', textTransform: 'capitalize' }}>{t}</button>
+            <button key={t.id} onClick={() => setTab(t.id)} style={{ padding: '13px 14px', border: 'none', background: 'none', cursor: 'pointer', fontSize: 13, fontWeight: tab === t.id ? 600 : 400, fontFamily: 'inherit', color: tab === t.id ? COLORS.primary : COLORS.textSub, borderBottom: tab === t.id ? `2px solid ${COLORS.primary}` : '2px solid transparent', marginBottom: -1, transition: 'all 0.12s', whiteSpace: 'nowrap' }}>{t.label}</button>
           ))}
         </div>
         <div style={{ padding: '20px 24px' }}>
@@ -219,20 +271,27 @@ function ClientDetail({ client, profiles, onClose, onEdit }: { client: Client; p
                 </div>
               )}
               {tab === 'actividad' && (
-                acts.length === 0 ? <div style={{ fontSize: 13, color: COLORS.textMuted }}>Sin actividad registrada</div> :
-                <div>{acts.map((a, i) => (
-                  <div key={a.id} style={{ display: 'flex', gap: 12, paddingBottom: 16, position: 'relative' }}>
-                    {i < acts.length - 1 && <div style={{ position: 'absolute', left: 14, top: 30, bottom: 0, width: 1, background: COLORS.border }}/>}
-                    <div style={{ width: 28, height: 28, borderRadius: '50%', background: COLORS.n100, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, zIndex: 1 }}>{ACT_ICONS[a.type] || '●'}</div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 13, color: COLORS.text, lineHeight: 1.5, marginBottom: 4 }}>{a.description}</div>
-                      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                        <span style={{ fontSize: 11, color: COLORS.textMuted }}>{formatDateTime(a.createdAt)}</span>
-                        <span style={{ fontSize: 9, padding: '1px 6px', borderRadius: 4, fontWeight: 700, background: a.origin === 'telegram' ? COLORS.primary100 : COLORS.n100, color: a.origin === 'telegram' ? COLORS.primary : COLORS.n500 }}>{a.origin}</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}</div>
+                acts.length === 0
+                  ? <div style={{ fontSize: 13, color: COLORS.textMuted, padding: '12px 0' }}>Sin actividad registrada</div>
+                  : <div>{acts.map((a, i) => {
+                      const meta = ACT_META[a.type] ?? ACT_META.nota
+                      const { Icon, color, bg } = meta
+                      return (
+                        <div key={a.id} style={{ display: 'flex', gap: 12, paddingBottom: 16, position: 'relative' }}>
+                          {i < acts.length - 1 && <div style={{ position: 'absolute', left: 13, top: 28, bottom: 0, width: 1, background: COLORS.border }} />}
+                          <div style={{ width: 28, height: 28, borderRadius: 8, background: bg, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
+                            <Icon size={13} color={color} strokeWidth={2} />
+                          </div>
+                          <div style={{ flex: 1, paddingTop: 2 }}>
+                            <div style={{ fontSize: 13, color: COLORS.text, lineHeight: 1.5, marginBottom: 4 }}>{a.description}</div>
+                            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                              <span style={{ fontSize: 11, color: COLORS.textMuted }}>{formatDateTime(a.createdAt)}</span>
+                              <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: 4, fontWeight: 700, background: a.origin === 'telegram' ? COLORS.primary100 : COLORS.n100, color: a.origin === 'telegram' ? COLORS.primary : COLORS.n500 }}>{a.origin}</span>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}</div>
               )}
               {tab === 'oportunidades' && (
                 opps.length === 0 ? <div style={{ fontSize: 13, color: COLORS.textMuted }}>Sin oportunidades</div> :
@@ -328,14 +387,13 @@ export default function ClientesPage() {
           <div style={{ fontSize: 13, color: COLORS.textSub, marginTop: 2 }}>{filtered.length} cliente{filtered.length !== 1 ? 's' : ''} encontrado{filtered.length !== 1 ? 's' : ''}</div>
         </div>
         <Btn onClick={() => { setEditClient(null); setModalOpen(true) }}>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Nuevo cliente
+          <Plus size={14} strokeWidth={2.5} /> Nuevo cliente
         </Btn>
       </div>
 
       <div style={{ background: 'white', borderRadius: 12, padding: '14px 18px', marginBottom: 18, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', boxShadow: '0 1px 3px oklch(0 0 0/0.06)' }}>
         <div style={{ position: 'relative', flex: '1 1 200px' }}>
-          <svg style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)' }} width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={COLORS.textMuted} strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <Search size={13} color={COLORS.textMuted} strokeWidth={2} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar por nombre, empresa, email..." style={{ ...inputStyle, paddingLeft: 32 }}/>
         </div>
         <select style={{ ...selectStyle, flex: '0 0 auto', minWidth: 160 }} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
