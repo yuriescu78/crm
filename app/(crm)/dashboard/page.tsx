@@ -5,68 +5,108 @@ import { nexusDB } from '@/lib/db'
 import { COLORS } from '@/lib/colors'
 import { formatDate, formatRelTime, isOverdue, isToday, initials, avatarColor, fmtCurrency } from '@/lib/utils'
 import type { Client, Opportunity, Task, Activity, CalendarEvent } from '@/lib/types'
+import {
+  Users, TrendingUp, CheckSquare, Send,
+  Phone, Mail, FileText, RefreshCw, Paperclip,
+  AlertTriangle, ArrowUpRight, Clock, Circle,
+} from 'lucide-react'
 
-/* ── Sub-components ─────────────────────────────────────────── */
-
-function KpiCard({ label, value, subtitle, iconBg, icon, delta, deltaPositive }: {
+/* ── KPI Card ─────────────────────────────────────────────────── */
+function KpiCard({ label, value, subtitle, icon, accent, delta, deltaUp }: {
   label: string; value: string | number; subtitle?: string
-  iconBg: string; icon: React.ReactNode; delta?: string; deltaPositive?: boolean
+  icon: React.ReactNode; accent: string; delta?: string; deltaUp?: boolean
 }) {
   return (
-    <div style={{ background: 'white', borderRadius: 14, padding: '20px 22px', boxShadow: '0 1px 3px oklch(0 0 0/0.06), 0 4px 16px oklch(0 0 0/0.05)', display: 'flex', alignItems: 'flex-start', gap: 14 }}>
-      <div style={{ width: 40, height: 40, borderRadius: 10, background: iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-        {icon}
+    <div style={{
+      background: 'white', borderRadius: 14, padding: '20px 22px',
+      border: `1px solid ${COLORS.border}`,
+      boxShadow: '0 1px 2px oklch(0 0 0/0.04), 0 4px 12px oklch(0 0 0/0.04)',
+      display: 'flex', flexDirection: 'column', gap: 14,
+      position: 'relative', overflow: 'hidden',
+    }}>
+      <div style={{
+        position: 'absolute', top: 0, left: 0, right: 0, height: 3,
+        background: `linear-gradient(90deg, ${accent}, ${accent}80)`,
+        borderRadius: '14px 14px 0 0',
+      }} />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <span style={{ fontSize: 12, fontWeight: 600, color: COLORS.textMuted, letterSpacing: '0.01em' }}>{label}</span>
+        <div style={{ width: 36, height: 36, borderRadius: 10, background: accent + '15', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {icon}
+        </div>
       </div>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 12, color: COLORS.textSub, fontWeight: 500, marginBottom: 4 }}>{label}</div>
-        <div style={{ fontSize: 26, fontWeight: 700, color: COLORS.text, letterSpacing: '-0.03em', lineHeight: 1 }}>{value}</div>
-        {subtitle && <div style={{ fontSize: 11, color: COLORS.textMuted, marginTop: 4 }}>{subtitle}</div>}
-        {delta !== undefined && (
-          <div style={{ fontSize: 11, fontWeight: 500, marginTop: 4, color: deltaPositive ? COLORS.green600 : COLORS.red }}>
-            {deltaPositive ? '↑' : '↓'} {delta}
-          </div>
-        )}
+      <div>
+        <div style={{ fontSize: 28, fontWeight: 800, color: COLORS.text, letterSpacing: '-0.04em', lineHeight: 1 }}>{value}</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6 }}>
+          {subtitle && <span style={{ fontSize: 11, color: COLORS.textMuted }}>{subtitle}</span>}
+          {delta && (
+            <span style={{ fontSize: 11, fontWeight: 600, color: deltaUp ? COLORS.green600 : COLORS.red, display: 'flex', alignItems: 'center', gap: 2 }}>
+              <ArrowUpRight size={11} style={{ transform: deltaUp ? 'none' : 'rotate(90deg)' }} />
+              {delta}
+            </span>
+          )}
+        </div>
       </div>
+    </div>
+  )
+}
+
+/* ── Section Card ─────────────────────────────────────────────── */
+function Card({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
+  return (
+    <div style={{
+      background: 'white', borderRadius: 14, padding: '18px 20px',
+      border: `1px solid ${COLORS.border}`,
+      boxShadow: '0 1px 2px oklch(0 0 0/0.04), 0 4px 12px oklch(0 0 0/0.04)',
+      ...style,
+    }}>
+      {children}
     </div>
   )
 }
 
 function SectionHeader({ title, action }: { title: React.ReactNode; action?: React.ReactNode }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-      <span style={{ fontSize: 14, fontWeight: 700, color: COLORS.text }}>{title}</span>
-      {action}
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+      <span style={{ fontSize: 14, fontWeight: 700, color: COLORS.text, letterSpacing: '-0.02em' }}>{title}</span>
+      {action && <span style={{ fontSize: 12, color: COLORS.primary, fontWeight: 600, cursor: 'pointer' }}>{action}</span>}
     </div>
   )
 }
 
-const ACTIVITY_ICONS: Record<string, { emoji: string; color: string; bg: string }> = {
-  llamada:   { emoji: '📞', color: COLORS.sky,    bg: COLORS.sky100 },
-  email:     { emoji: '📧', color: COLORS.primary, bg: COLORS.primary100 },
-  nota:      { emoji: '📝', color: COLORS.amber,  bg: COLORS.amber100 },
-  cambio:    { emoji: '🔄', color: COLORS.violet, bg: COLORS.violet100 },
-  reunion:   { emoji: '👥', color: COLORS.teal,   bg: COLORS.teal100 },
-  tarea:     { emoji: '✅', color: COLORS.green600, bg: COLORS.green100 },
-  telegram:  { emoji: '✈️', color: COLORS.primary, bg: COLORS.primary100 },
-  documento: { emoji: '📎', color: COLORS.amber,  bg: COLORS.amber100 },
+/* ── Activity ─────────────────────────────────────────────────── */
+const ACT_ICON: Record<string, { Icon: React.ElementType; color: string; bg: string }> = {
+  llamada:   { Icon: Phone,      color: COLORS.sky,      bg: COLORS.sky100 },
+  email:     { Icon: Mail,       color: COLORS.primary,  bg: COLORS.primary100 },
+  nota:      { Icon: FileText,   color: COLORS.amber,    bg: COLORS.amber100 },
+  cambio:    { Icon: RefreshCw,  color: COLORS.violet,   bg: COLORS.violet100 },
+  reunion:   { Icon: Users,      color: COLORS.teal,     bg: COLORS.teal100 },
+  tarea:     { Icon: CheckSquare,color: COLORS.green600, bg: COLORS.green100 },
+  telegram:  { Icon: Send,       color: COLORS.primary,  bg: COLORS.primary100 },
+  documento: { Icon: Paperclip,  color: COLORS.amber,    bg: COLORS.amber100 },
 }
 
 function ActivityTimeline({ activities, clients }: { activities: Activity[]; clients: Client[] }) {
+  if (activities.length === 0) return (
+    <div style={{ padding: '20px 0', textAlign: 'center', color: COLORS.textMuted, fontSize: 13 }}>Sin actividad reciente</div>
+  )
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+    <div>
       {activities.slice(0, 6).map((act, i, arr) => {
-        const info = ACTIVITY_ICONS[act.type] || ACTIVITY_ICONS.nota
+        const { Icon, color, bg } = ACT_ICON[act.type] ?? ACT_ICON.nota
         const client = clients.find(c => c.id === act.clientId)
         return (
           <div key={act.id} style={{ display: 'flex', gap: 12, paddingBottom: 14, position: 'relative' }}>
-            {i < arr.length - 1 && <div style={{ position: 'absolute', left: 14, top: 28, bottom: 0, width: 1, background: COLORS.border }}/>}
-            <div style={{ width: 28, height: 28, borderRadius: '50%', background: info.bg, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, zIndex: 1 }}>
-              {info.emoji}
+            {i < arr.length - 1 && (
+              <div style={{ position: 'absolute', left: 13, top: 28, bottom: 0, width: 1, background: COLORS.border }} />
+            )}
+            <div style={{ width: 28, height: 28, borderRadius: 8, background: bg, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
+              <Icon size={13} color={color} strokeWidth={2} />
             </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 12, color: COLORS.text, lineHeight: 1.4, marginBottom: 2 }}>{act.description}</div>
+            <div style={{ flex: 1, minWidth: 0, paddingTop: 2 }}>
+              <div style={{ fontSize: 12, color: COLORS.text, lineHeight: 1.45, marginBottom: 3 }}>{act.description}</div>
               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                {client && <span style={{ fontSize: 11, color: COLORS.primary, fontWeight: 600 }}>{client.company || `${client.firstName} ${client.lastName}`}</span>}
+                {client && <span style={{ fontSize: 11, color: COLORS.primary, fontWeight: 600 }}>{client.company || `${client.firstName} ${client.lastName ?? ''}`}</span>}
                 <span style={{ fontSize: 11, color: COLORS.textMuted }}>{formatRelTime(act.createdAt)}</span>
                 {act.origin === 'telegram' && (
                   <span style={{ fontSize: 9, padding: '1px 6px', borderRadius: 4, background: COLORS.primary100, color: COLORS.primary, fontWeight: 700 }}>TG</span>
@@ -80,67 +120,73 @@ function ActivityTimeline({ activities, clients }: { activities: Activity[]; cli
   )
 }
 
+/* ── Task item ─────────────────────────────────────────────────── */
 function TaskItem({ task, clients, onToggle }: { task: Task; clients: Client[]; onToggle: (id: string) => void }) {
   const client = clients.find(c => c.id === task.clientId)
-  const done = task.status === 'completada'
+  const done    = task.status === 'completada'
   const overdue = isOverdue(task.dueDate) && !done
-  const today = isToday(task.dueDate) && !done
-  const priorityColors: Record<string, string> = { alta: COLORS.red, media: COLORS.amber, baja: COLORS.n400, urgente: COLORS.red }
+  const today   = isToday(task.dueDate) && !done
+  const dotColors: Record<string, string> = { alta: COLORS.red, urgente: COLORS.red600, media: COLORS.amber, baja: COLORS.n300 }
 
   return (
-    <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '8px 0', borderBottom: `1px solid ${COLORS.borderSub}` }}>
-      <div onClick={() => onToggle(task.id)} style={{
-        width: 16, height: 16, borderRadius: 4, marginTop: 1, flexShrink: 0, cursor: 'pointer',
-        border: `2px solid ${done ? COLORS.green600 : COLORS.n300}`,
-        background: done ? COLORS.green600 : 'transparent',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-      }}>
-        {done && <svg width="8" height="8" viewBox="0 0 10 10"><polyline points="1.5,5 4,7.5 8.5,2.5" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round"/></svg>}
+    <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '9px 0', borderBottom: `1px solid ${COLORS.borderSub}` }}>
+      <div
+        onClick={() => onToggle(task.id)}
+        style={{
+          width: 17, height: 17, borderRadius: 5, marginTop: 1, flexShrink: 0, cursor: 'pointer',
+          border: `2px solid ${done ? COLORS.green600 : COLORS.n300}`,
+          background: done ? COLORS.green600 : 'transparent',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          transition: 'all 0.15s',
+        }}
+      >
+        {done && <svg width="8" height="8" viewBox="0 0 10 10"><polyline points="1.5,5 4,7.5 8.5,2.5" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 12, fontWeight: 500, color: done ? COLORS.textMuted : COLORS.text, textDecoration: done ? 'line-through' : 'none', lineHeight: 1.3 }}>{task.title}</div>
-        <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginTop: 3 }}>
-          {client && <span style={{ fontSize: 11, color: COLORS.textMuted }}>{client.company}</span>}
+        <div style={{ fontSize: 13, fontWeight: 500, color: done ? COLORS.textMuted : COLORS.text, textDecoration: done ? 'line-through' : 'none', lineHeight: 1.3 }}>{task.title}</div>
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginTop: 4 }}>
+          {client && <span style={{ fontSize: 11, color: COLORS.textMuted }}>{client.company || client.firstName}</span>}
           {task.dueDate && (
-            <span style={{ fontSize: 10, fontWeight: 600, padding: '1px 6px', borderRadius: 4, background: overdue ? COLORS.red100 : today ? COLORS.amber100 : COLORS.n100, color: overdue ? COLORS.red600 : today ? COLORS.amber : COLORS.textMuted }}>
-              {overdue ? '⚠ ' : ''}{formatDate(task.dueDate)}
+            <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 6px', borderRadius: 5, background: overdue ? COLORS.red100 : today ? COLORS.amber100 : COLORS.n100, color: overdue ? COLORS.red600 : today ? COLORS.amber : COLORS.textMuted, display: 'flex', alignItems: 'center', gap: 3 }}>
+              <Clock size={9} />
+              {overdue ? 'Vencida · ' : ''}{formatDate(task.dueDate)}
             </span>
           )}
         </div>
       </div>
-      <div style={{ width: 6, height: 6, borderRadius: '50%', background: priorityColors[task.priority] || COLORS.n300, marginTop: 5, flexShrink: 0 }}/>
+      <Circle size={8} fill={dotColors[task.priority] ?? COLORS.n300} color={dotColors[task.priority] ?? COLORS.n300} style={{ marginTop: 5, flexShrink: 0 }} />
     </div>
   )
 }
 
-function UpcomingEvent({ event, clients }: { event: CalendarEvent; clients: Client[] }) {
+/* ── Event card ─────────────────────────────────────────────────── */
+function EventCard({ event, clients }: { event: CalendarEvent; clients: Client[] }) {
   const client = clients.find(c => c.id === event.clientId)
   const d = new Date(event.startAt)
-  const typeColors: Record<string, string> = { reunion: COLORS.primary, llamada: COLORS.amber, propuesta: COLORS.green, recordatorio: COLORS.violet }
-  const color = typeColors[event.type] || COLORS.primary
+  const typeColor: Record<string, string> = { reunion: COLORS.primary, llamada: COLORS.amber, propuesta: COLORS.green, recordatorio: COLORS.violet }
+  const color = typeColor[event.type] ?? COLORS.primary
 
   return (
-    <div style={{ display: 'flex', gap: 12, padding: '10px 12px', borderRadius: 10, background: COLORS.n50, border: `1px solid ${COLORS.border}`, marginBottom: 8 }}>
-      <div style={{ width: 40, height: 40, borderRadius: 8, background: color + '18', flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: `1.5px solid ${color}30` }}>
-        <div style={{ fontSize: 14, fontWeight: 800, color, lineHeight: 1 }}>{d.getDate()}</div>
-        <div style={{ fontSize: 9, fontWeight: 700, color, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{d.toLocaleDateString('es-ES', { month: 'short' })}</div>
+    <div style={{ display: 'flex', gap: 12, padding: '10px 12px', borderRadius: 10, background: COLORS.n50, border: `1px solid ${COLORS.border}`, marginBottom: 8, alignItems: 'center' }}>
+      <div style={{ width: 42, height: 42, borderRadius: 10, background: color + '15', flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: `1.5px solid ${color}25` }}>
+        <div style={{ fontSize: 16, fontWeight: 800, color, lineHeight: 1 }}>{d.getDate()}</div>
+        <div style={{ fontSize: 9, fontWeight: 700, color: color + 'cc', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{d.toLocaleDateString('es-ES', { month: 'short' })}</div>
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 12, fontWeight: 600, color: COLORS.text, marginBottom: 2 }}>{event.title}</div>
+        <div style={{ fontSize: 13, fontWeight: 600, color: COLORS.text, marginBottom: 2 }}>{event.title}</div>
         <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-          {client && <span style={{ fontSize: 11, color: COLORS.textMuted }}>{client.company}</span>}
+          {client && <span style={{ fontSize: 11, color: COLORS.textMuted }}>{client.company || client.firstName}</span>}
           <span style={{ fontSize: 11, color: COLORS.textMuted }}>{d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>
         </div>
       </div>
-      <div style={{ fontSize: 10, padding: '2px 8px', borderRadius: 20, height: 'fit-content', background: color + '18', color, fontWeight: 600, flexShrink: 0, alignSelf: 'center' }}>
+      <span style={{ fontSize: 10, padding: '3px 8px', borderRadius: 20, background: color + '15', color, fontWeight: 700, textTransform: 'capitalize', flexShrink: 0 }}>
         {event.type}
-      </div>
+      </span>
     </div>
   )
 }
 
-/* ── Main component ─────────────────────────────────────────── */
-
+/* ── Page ─────────────────────────────────────────────────────── */
 export default function DashboardPage() {
   const [clients, setClients]       = useState<Client[]>([])
   const [opps, setOpps]             = useState<Opportunity[]>([])
@@ -151,10 +197,8 @@ export default function DashboardPage() {
 
   useEffect(() => {
     Promise.all([
-      nexusDB.clients.list(),
-      nexusDB.opportunities.list(),
-      nexusDB.tasks.list(),
-      nexusDB.events.list(),
+      nexusDB.clients.list(), nexusDB.opportunities.list(),
+      nexusDB.tasks.list(),   nexusDB.events.list(),
       nexusDB.activities.list(),
     ]).then(([c, o, t, e, a]) => {
       setClients(c); setOpps(o); setTasks(t); setEvents(e); setActivities(a)
@@ -171,16 +215,16 @@ export default function DashboardPage() {
   }
 
   const now = new Date()
-  const greeting = now.getHours() < 14 ? 'Buenos días' : now.getHours() < 21 ? 'Buenas tardes' : 'Buenas noches'
-  const dateStr = now.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+  const hour = now.getHours()
+  const greeting = hour < 14 ? 'Buenos días' : hour < 21 ? 'Buenas tardes' : 'Buenas noches'
+  const dateStr = now.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })
 
-  // KPIs
-  const activeOpps = opps.filter(o => !['ganado', 'perdido'].includes(o.stage))
-  const totalPipeline = activeOpps.reduce((s, o) => s + o.estimatedValue, 0)
+  const activeOpps     = opps.filter(o => !['ganado', 'perdido'].includes(o.stage))
+  const totalPipeline  = activeOpps.reduce((s, o) => s + o.estimatedValue, 0)
   const weightedPipeline = activeOpps.reduce((s, o) => s + (o.estimatedValue * o.probability / 100), 0)
-  const leadsActivos = clients.filter(c => !['ganado', 'perdido', 'dormido'].includes(c.status)).length
-  const propuestas = opps.filter(o => o.stage === 'propuesta').length
-  const tareasHoy = tasks.filter(t => isToday(t.dueDate) && t.status !== 'completada').length
+  const leadsActivos   = clients.filter(c => !['ganado', 'perdido', 'dormido'].includes(c.status)).length
+  const propuestas     = opps.filter(o => o.stage === 'propuesta').length
+  const tareasHoy      = tasks.filter(t => isToday(t.dueDate) && t.status !== 'completada').length
   const tareasVencidas = tasks.filter(t => isOverdue(t.dueDate) && t.status !== 'completada').length
 
   const clientesSinActividad = clients.filter(c => {
@@ -192,121 +236,113 @@ export default function DashboardPage() {
   if (tareasVencidas > 0) alerts.push(`${tareasVencidas} tarea${tareasVencidas > 1 ? 's' : ''} vencida${tareasVencidas > 1 ? 's' : ''}`)
   if (clientesSinActividad.length > 0) alerts.push(`${clientesSinActividad.length} cliente${clientesSinActividad.length > 1 ? 's' : ''} sin actividad +15 días`)
 
-  const todayTasks  = tasks.filter(t => isToday(t.dueDate) && t.status !== 'completada')
-  const overdueTasks = tasks.filter(t => isOverdue(t.dueDate) && t.status !== 'completada')
+  const todayTasks     = tasks.filter(t => isToday(t.dueDate) && t.status !== 'completada')
+  const overdueTasks   = tasks.filter(t => isOverdue(t.dueDate) && t.status !== 'completada')
   const upcomingEvents = events.filter(e => e.status === 'programado').slice(0, 3)
   const recentActivities = [...activities].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
 
-  if (loading) {
-    return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 300 }}>
-        <div style={{ width: 24, height: 24, border: `3px solid ${COLORS.primary}30`, borderTopColor: COLORS.primary, borderRadius: '50%', animation: 'spin 0.7s linear infinite' }}/>
-      </div>
-    )
-  }
+  if (loading) return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh' }}>
+      <div style={{ width: 28, height: 28, border: `3px solid ${COLORS.primary}20`, borderTopColor: COLORS.primary, borderRadius: '50%', animation: 'spin 0.65s linear infinite' }} />
+    </div>
+  )
 
   return (
-    <div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
       {/* Header */}
-      <div style={{ marginBottom: 20 }}>
-        <div style={{ fontSize: 22, fontWeight: 800, color: COLORS.text, letterSpacing: '-0.03em' }}>{greeting} 👋</div>
-        <div style={{ fontSize: 13, color: COLORS.textSub, marginTop: 4, textTransform: 'capitalize' }}>{dateStr}</div>
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+        <div>
+          <div style={{ fontSize: 24, fontWeight: 800, color: COLORS.text, letterSpacing: '-0.04em' }}>{greeting} 👋</div>
+          <div style={{ fontSize: 13, color: COLORS.textMuted, marginTop: 4, textTransform: 'capitalize', fontWeight: 400 }}>{dateStr}</div>
+        </div>
+        {alerts.length > 0 && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: COLORS.amber100, border: `1px solid ${COLORS.amber}40`, borderRadius: 10, padding: '8px 14px' }}>
+            <AlertTriangle size={14} color={COLORS.amber} />
+            <span style={{ fontSize: 12, fontWeight: 600, color: COLORS.amber }}>{alerts.join(' · ')}</span>
+          </div>
+        )}
       </div>
 
-      {/* Alerts */}
-      {alerts.length > 0 && (
-        <div style={{ background: COLORS.amber100, border: `1px solid ${COLORS.amber}40`, borderRadius: 10, padding: '10px 16px', marginBottom: 20, display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-          <span style={{ fontSize: 14, flexShrink: 0, marginTop: 1 }}>⚠️</span>
-          <div>
-            <div style={{ fontSize: 12, fontWeight: 700, color: COLORS.amber, marginBottom: 4 }}>{alerts.length} alerta{alerts.length > 1 ? 's' : ''} requieren tu atención</div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-              {alerts.map((a, i) => (
-                <span key={i} style={{ fontSize: 11, padding: '2px 8px', borderRadius: 4, background: 'white', color: COLORS.textSub, border: `1px solid ${COLORS.amber}30` }}>{a}</span>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* KPIs */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 22 }}>
-        <KpiCard label="Leads activos" value={leadsActivos} iconBg={COLORS.primary100}
-          subtitle={`${clients.filter(c => c.status === 'nuevo').length} nuevos este mes`}
-          icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.primary} strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
+        <KpiCard label="Leads activos" value={leadsActivos} accent={COLORS.primary}
+          subtitle={`${clients.filter(c => c.status === 'nuevo').length} nuevos`}
+          icon={<Users size={17} color={COLORS.primary} strokeWidth={2} />}
         />
-        <KpiCard label="Pipeline total" value={fmtCurrency(totalPipeline)} iconBg={COLORS.green100}
-          subtitle={`Pond. ${fmtCurrency(weightedPipeline)}`}
-          icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.green600} strokeWidth="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>}
+        <KpiCard label="Pipeline total" value={fmtCurrency(totalPipeline)} accent={COLORS.green}
+          subtitle={`Pond. ${fmtCurrency(Math.round(weightedPipeline))}`}
+          icon={<TrendingUp size={17} color={COLORS.green600} strokeWidth={2} />}
+          delta={activeOpps.length + ' oportunidades'} deltaUp
         />
-        <KpiCard label="Tareas hoy" value={tareasHoy} iconBg={COLORS.amber100}
-          subtitle={tareasVencidas > 0 ? `${tareasVencidas} vencidas` : 'Sin tareas vencidas'}
-          icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.amber} strokeWidth="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>}
+        <KpiCard label="Tareas hoy" value={tareasHoy} accent={COLORS.amber}
+          subtitle={tareasVencidas > 0 ? `⚠ ${tareasVencidas} vencidas` : 'Al día'}
+          icon={<CheckSquare size={17} color={COLORS.amber} strokeWidth={2} />}
         />
-        <KpiCard label="Propuestas" value={propuestas} iconBg={COLORS.violet100}
+        <KpiCard label="Propuestas" value={propuestas} accent={COLORS.violet}
           subtitle="En espera de respuesta"
-          icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.violet} strokeWidth="2"><path d="M22 2L11 13"/><path d="M22 2L15 22 11 13 2 9l20-7z"/></svg>}
+          icon={<Send size={17} color={COLORS.violet} strokeWidth={2} />}
         />
       </div>
 
       {/* 2-col layout */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: 20 }}>
-        {/* Left */}
-        <div>
-          <div style={{ background: 'white', borderRadius: 14, padding: '18px 20px', marginBottom: 18, boxShadow: '0 1px 3px oklch(0 0 0/0.06), 0 4px 16px oklch(0 0 0/0.05)' }}>
-            <SectionHeader title="Próximas reuniones" action={<span style={{ fontSize: 11, color: COLORS.primary, fontWeight: 600, cursor: 'pointer' }}>Ver todas →</span>}/>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 18 }}>
+        {/* Left col */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+          <Card>
+            <SectionHeader title="Próximas reuniones" action="Ver todas →" />
             {upcomingEvents.length === 0
-              ? <div style={{ fontSize: 12, color: COLORS.textMuted, padding: '8px 0' }}>No hay eventos próximos</div>
-              : upcomingEvents.map(e => <UpcomingEvent key={e.id} event={e} clients={clients}/>)
+              ? <div style={{ fontSize: 13, color: COLORS.textMuted, padding: '12px 0' }}>No hay eventos próximos</div>
+              : upcomingEvents.map(e => <EventCard key={e.id} event={e} clients={clients} />)
             }
-          </div>
-          <div style={{ background: 'white', borderRadius: 14, padding: '18px 20px', boxShadow: '0 1px 3px oklch(0 0 0/0.06), 0 4px 16px oklch(0 0 0/0.05)' }}>
-            <SectionHeader title="Actividad reciente" action={<span style={{ fontSize: 11, color: COLORS.primary, fontWeight: 600, cursor: 'pointer' }}>Ver todo →</span>}/>
-            <ActivityTimeline activities={recentActivities} clients={clients}/>
-          </div>
+          </Card>
+          <Card>
+            <SectionHeader title="Actividad reciente" action="Ver todo →" />
+            <ActivityTimeline activities={recentActivities} clients={clients} />
+          </Card>
         </div>
 
-        {/* Right */}
-        <div>
-          <div style={{ background: 'white', borderRadius: 14, padding: '18px 20px', marginBottom: 18, boxShadow: '0 1px 3px oklch(0 0 0/0.06), 0 4px 16px oklch(0 0 0/0.05)' }}>
-            <SectionHeader title={`Tareas de hoy (${todayTasks.length})`}/>
+        {/* Right col */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+          <Card>
+            <SectionHeader title={`Tareas de hoy (${todayTasks.length})`} />
             {todayTasks.length === 0
-              ? <div style={{ fontSize: 12, color: COLORS.textMuted, padding: '8px 0' }}>No hay tareas para hoy 🎉</div>
-              : todayTasks.map(t => <TaskItem key={t.id} task={t} clients={clients} onToggle={toggleTask}/>)
+              ? <div style={{ fontSize: 13, color: COLORS.textMuted, padding: '8px 0' }}>No hay tareas para hoy 🎉</div>
+              : todayTasks.map(t => <TaskItem key={t.id} task={t} clients={clients} onToggle={toggleTask} />)
             }
-          </div>
+          </Card>
 
           {overdueTasks.length > 0 && (
-            <div style={{ background: 'white', borderRadius: 14, padding: '18px 20px', marginBottom: 18, border: `1.5px solid ${COLORS.red100}`, boxShadow: '0 1px 3px oklch(0 0 0/0.06)' }}>
+            <Card style={{ borderColor: COLORS.red100, borderWidth: 1.5 }}>
               <SectionHeader title={
-                <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span style={{ fontSize: 14, fontWeight: 700, color: COLORS.red }}>Tareas vencidas</span>
-                  <span style={{ fontSize: 11, padding: '1px 7px', borderRadius: 10, background: COLORS.red100, color: COLORS.red600, fontWeight: 700 }}>{overdueTasks.length}</span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                  <span style={{ color: COLORS.red }}>Tareas vencidas</span>
+                  <span style={{ fontSize: 11, padding: '2px 7px', borderRadius: 20, background: COLORS.red100, color: COLORS.red600, fontWeight: 700 }}>{overdueTasks.length}</span>
                 </span>
-              }/>
-              {overdueTasks.map(t => <TaskItem key={t.id} task={t} clients={clients} onToggle={toggleTask}/>)}
-            </div>
+              } />
+              {overdueTasks.slice(0, 4).map(t => <TaskItem key={t.id} task={t} clients={clients} onToggle={toggleTask} />)}
+            </Card>
           )}
 
           {clientesSinActividad.length > 0 && (
-            <div style={{ background: 'white', borderRadius: 14, padding: '18px 20px', boxShadow: '0 1px 3px oklch(0 0 0/0.06)' }}>
+            <Card>
               <SectionHeader title={
-                <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span style={{ fontSize: 14, fontWeight: 700 }}>Sin actividad reciente</span>
-                  <span style={{ fontSize: 11, padding: '1px 7px', borderRadius: 10, background: COLORS.amber100, color: COLORS.amber, fontWeight: 700 }}>{clientesSinActividad.length}</span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                  Sin actividad reciente
+                  <span style={{ fontSize: 11, padding: '2px 7px', borderRadius: 20, background: COLORS.amber100, color: COLORS.amber, fontWeight: 700 }}>{clientesSinActividad.length}</span>
                 </span>
-              }/>
-              {clientesSinActividad.map(c => (
+              } />
+              {clientesSinActividad.slice(0, 4).map(c => (
                 <div key={c.id} style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '8px 0', borderBottom: `1px solid ${COLORS.borderSub}` }}>
-                  <div style={{ width: 30, height: 30, borderRadius: '50%', background: avatarColor(c.id.charCodeAt(1)), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: 'white', flexShrink: 0 }}>
-                    {initials(`${c.firstName} ${c.lastName || ''}`)}
+                  <div style={{ width: 30, height: 30, borderRadius: 8, background: avatarColor(c.id.charCodeAt(1)), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: 'white', flexShrink: 0 }}>
+                    {initials(`${c.firstName} ${c.lastName ?? ''}`)}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: COLORS.text }}>{c.company || `${c.firstName} ${c.lastName}`}</div>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: COLORS.text }}>{c.company || `${c.firstName} ${c.lastName ?? ''}`}</div>
                     <div style={{ fontSize: 11, color: COLORS.textMuted }}>Última actividad: {formatDate(c.lastActivityAt)}</div>
                   </div>
                 </div>
               ))}
-            </div>
+            </Card>
           )}
         </div>
       </div>

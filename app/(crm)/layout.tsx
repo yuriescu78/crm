@@ -7,6 +7,7 @@ import Sidebar from '@/components/layout/Sidebar'
 import TopBar from '@/components/layout/TopBar'
 import { createClient } from '@/lib/supabase/client'
 import type { Profile } from '@/lib/types'
+import { COLORS } from '@/lib/colors'
 
 export default function CRMLayout({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false)
@@ -57,8 +58,8 @@ export default function CRMLayout({ children }: { children: React.ReactNode }) {
           userInitials={userInitials}
         />
         <main style={{
-          flex: 1, overflowY: 'auto', padding: '24px 28px',
-          background: 'oklch(0.965 0.008 240)',
+          flex: 1, overflowY: 'auto', padding: '26px 30px',
+          background: COLORS.bg,
         }}>
           <div className="view-enter">
             {children}
