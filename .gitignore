@@ -34,11 +34,19 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-key
-key.pub
-.env.local
-.vercel
-key
-key.pub
+# SSH keys & local credentials
+*.pub
+1234
+1234.pub
+
+# Local settings
+.claude/
+
+# Screenshots
+*.PNG
+*.png
+*.jpg
+*.jpeg
+
 .env.local
 .vercel
